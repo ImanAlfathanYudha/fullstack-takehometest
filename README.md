@@ -18,7 +18,7 @@ Add here
 How to run backend server on local:
 
 ```bash
-CGO_ENABLED=1 go run main.go
+CGO_ENABLED=1 go run main.go 
 ```
 
 How to run backend server on production build:
