@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/durianpay/fullstack-boilerplate/internal/openapigen"
+	"backend/internal/middleware"
+	"backend/internal/openapigen"
+
 	"github.com/go-chi/chi/v5"
 	oapinethttpmw "github.com/oapi-codegen/nethttp-middleware"
 )
@@ -24,25 +26,31 @@ const (
 	idleTimeout  = 60
 )
 
-func NewServer(apiHandler openapigen.ServerInterface, openapiYamlPath string) *Server {
+func NewServer(apiHandler openapigen.ServerInterface, openapiYamlPath string, jwtSecret []byte) *Server {
 	swagger, err := openapigen.GetSwagger()
 	if err != nil {
 		log.Fatalf("failed to load swagger: %v", err)
 	}
-
 	r := chi.NewRouter()
-
 	r.Route("/", func(api chi.Router) {
-		api.Use(oapinethttpmw.OapiRequestValidatorWithOptions(
-			swagger,
-			&oapinethttpmw.Options{
-				DoNotValidateServers:  true,
-				SilenceServersWarning: true,
-			},
-		))
+		api.Use(oapinethttpmw.OapiRequestValidator(swagger))
 		openapigen.HandlerFromMux(apiHandler, api)
 	})
-
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.JWTAuth(jwtSecret)) // Use the jwtSecret here!
+		// GET /payments
+		r.Get("/dashboard/v1/payments", func(w http.ResponseWriter, req *http.Request) {
+			// We manually parse query params here (status, id)
+			var params openapigen.GetDashboardV1PaymentsParams
+			if v := req.URL.Query().Get("status"); v != "" {
+				params.Status = &v
+			}
+			if v := req.URL.Query().Get("id"); v != "" {
+				params.Id = &v
+			}
+			apiHandler.GetDashboardV1Payments(w, req, params)
+		})
+	})
 	return &Server{
 		router: r,
 	}
