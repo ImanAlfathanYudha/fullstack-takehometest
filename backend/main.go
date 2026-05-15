@@ -5,48 +5,49 @@ import (
 	"log"
 	"time"
 
-	"github.com/durianpay/fullstack-boilerplate/internal/api"
-	"github.com/durianpay/fullstack-boilerplate/internal/config"
-	ah "github.com/durianpay/fullstack-boilerplate/internal/module/auth/handler"
-	ar "github.com/durianpay/fullstack-boilerplate/internal/module/auth/repository"
-	au "github.com/durianpay/fullstack-boilerplate/internal/module/auth/usecase"
-	srv "github.com/durianpay/fullstack-boilerplate/internal/service/http"
+	"backend/internal/api"
+	"backend/internal/config"
+	authHandler "backend/internal/module/auth/handler"
+	authRepository "backend/internal/module/auth/repository"
+	authUsecase "backend/internal/module/auth/usecase"
+	paymentHandler "backend/internal/module/payment/handler"
+	paymentRepository "backend/internal/module/payment/repository"
+	paymentUsecase "backend/internal/module/payment/usecase"
+	srv "backend/internal/service/http"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
 	_ = godotenv.Load()
-
-	db, err := sql.Open("sqlite3", "dashboard.db?_foreign_keys=1")
+	db, err := sql.Open("sqlite", "dashboard.db?_foreign_keys=1")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
 	if err := initDB(db); err != nil {
 		log.Fatal(err)
 	}
-
 	JwtExpiredDuration, err := time.ParseDuration(config.JwtExpired)
 	if err != nil {
 		panic(err)
 	}
-
-	userRepo := ar.NewUserRepo(db)
-
-	authUC := au.NewAuthUsecase(userRepo, config.JwtSecret, JwtExpiredDuration)
-
-	authH := ah.NewAuthHandler(authUC)
-
+	// ── Auth module (existing) ──
+	userRepo := authRepository.NewUserRepo(db)
+	authUC := authUsecase.NewAuthUsecase(userRepo, config.JwtSecret, JwtExpiredDuration)
+	authH := authHandler.NewAuthHandler(authUC)
+	// ── Payment module (NEW) ──
+	paymentRepo := paymentRepository.NewPaymentRepo(db)
+	paymentUC := paymentUsecase.NewPaymentUsecase(paymentRepo)
+	paymentH := paymentHandler.NewPaymentHandler(paymentUC)
 	apiHandler := &api.APIHandler{
-		Auth: authH,
+		Auth:    authH,
+		Payment: paymentH, // ← NEW
 	}
-
-	server := srv.NewServer(apiHandler, config.OpenapiYamlLocation)
-
+	server := srv.NewServer(apiHandler, config.OpenapiYamlLocation, config.JwtSecret) // ← pass JwtSecret for middleware
 	addr := config.HttpAddress
 	log.Printf("starting server on %s", addr)
 	server.Start(addr)
@@ -61,6 +62,14 @@ func initDB(db *sql.DB) error {
 		  password_hash TEXT NOT NULL,
 		  role TEXT NOT NULL
 		);`,
+		//query for payment tables
+		`CREATE TABLE IF NOT EXISTS payments (
+		  id INTEGER PRIMARY KEY AUTOINCREMENT,
+		  merchant TEXT NOT NULL,
+		  status TEXT NOT NULL,
+		  amount REAL NOT NULL,
+		  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {
@@ -68,12 +77,12 @@ func initDB(db *sql.DB) error {
 		}
 	}
 	// seed admin user if not exists
-	var cnt int
+	var count int
 	row := db.QueryRow("SELECT COUNT(1) FROM users")
-	if err := row.Scan(&cnt); err != nil {
+	if err := row.Scan(&count); err != nil {
 		return err
 	}
-	if cnt == 0 {
+	if count == 0 {
 		hash, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 		if err != nil {
 			return err
@@ -86,7 +95,36 @@ func initDB(db *sql.DB) error {
 		}
 	}
 
+	row = db.QueryRow("SELECT COUNT(1) FROM payments")
+	if err := row.Scan(&count); err != nil {
+		return err
+	}
+	if count == 0 {
+		payments := []struct {
+			merchant string
+			status   string
+			amount   float64
+		}{
+			{"Tokopedia", "completed", 150000},
+			{"Shopee", "processing", 75000.50},
+			{"Grab", "failed", 200000},
+		}
+
+		for _, p := range payments {
+			_, err := db.Exec(
+				"INSERT INTO payments(merchant, status, amount) VALUES (?, ?, ?)",
+				p.merchant,
+				p.status,
+				p.amount,
+			)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	const dbLifetime = time.Minute * 5
 	db.SetConnMaxLifetime(dbLifetime)
+
 	return nil
 }
