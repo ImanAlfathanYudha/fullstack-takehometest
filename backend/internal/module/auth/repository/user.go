@@ -1,9 +1,8 @@
 package repository
 
 import (
+	"backend/internal/entity"
 	"database/sql"
-
-	"github.com/durianpay/fullstack-boilerplate/internal/entity"
 )
 
 type UserRepository interface {
