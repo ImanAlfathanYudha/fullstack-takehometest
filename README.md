@@ -1,56 +1,81 @@
-# fullstack app
+# Fullstack Payment Dashboard
 
-Explain your service in here. This is fulltsack project related Payment using golang as backend and nuxt as frontend....
+This is a fullstack application for a Payment Dashboard. It uses **Go** for the backend (Clean Architecture) and **Nuxt/Next** for the frontend.
 
-list of tools version of your machine:
+## 🛠 Tools & Versions
 
 ```bash
-go version go1.25.5 darwin/arm64
+go version go1.25.5 # Supports pure-Go SQLite
 node v24.13.1
 ```
 
-Install all related requirements:
+## Installation
 
+**Backend:**
 ```bash
-Add here
+cd backend
+cp env.sample .env
+go mod tidy
+go mod vendor
 ```
 
-How to run backend server on local:
-
+**Frontend:**
 ```bash
-CGO_ENABLED=1 go run main.go 
+cd frontend
+npm install
 ```
 
-How to run backend server on production build:
+## Running Locally
 
+**Backend Server:**
 ```bash
-Add here
+cd backend
+# Windows (PowerShell)
+$env:CGO_ENABLED="0"; go run main.go
+
+# Mac / Linux
+make run
 ```
 
-How to run frontend on local:
-
+**Frontend Client:**
 ```bash
-Add here
+cd frontend
+npm run dev
 ```
 
-How to run frontend on production build:
+## Production Build
 
+**Backend:**
 ```bash
-Add here
+cd backend
+make build
+./bin/backend
 ```
 
-To checking openapi documentations, you can visit this url after backend running.
-
+**Frontend:**
 ```bash
-Add here
+cd frontend
+npm run build
+npm run start
 ```
 
-Login to frontend by visiting:
+## API Documentation
 
+Once the backend is running, you can view the API specification by opening the `openapi.yaml` file in any OpenAPI/Swagger viewer (e.g., [editor.swagger.io](https://editor.swagger.io)).
+
+## Accessing the App
+
+Login to the dashboard by visiting:
 ```bash
-Add here
+http://localhost:3000/login
 ```
+**Credentials:**
+- Email: `cs@test.com`
+- Password: `password`
 
-evidences: Add video evidences of your service
-see backend [README.md](backend/README.md)
-see frontend [README.md](frontend/README.md)
+---
+
+## 📂 Project Structure
+- [Backend Documentation](backend/README.md)
+- [Frontend Documentation](frontend/README.md)
+
