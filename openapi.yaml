@@ -62,10 +62,11 @@ components:
           example: "completed , processing , or failed"
         amount:
           type: string
-          example: "alice@example.com"
+          example: "20000"
         created_at:
           type: string
           format: date-time
+          example: "2026-05-15 07:48:05"
 
   responses:
     LoginResponse:
