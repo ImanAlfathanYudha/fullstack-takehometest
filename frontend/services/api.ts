@@ -1,14 +1,12 @@
 import axios from 'axios';
 
-// Create an instance with your backend's base URL
 const api = axios.create({
-  baseURL: 'http://localhost:8080', //make it global in case backend URL changes
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080', 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add the token to headers.
 api.interceptors.request.use(
   (config) => {
     // Check token in local storage
