@@ -17,7 +17,6 @@ func NewPaymentRepo(db *sql.DB) *PaymentRepository {
 type IPaymentRepository interface {
 	GetPayments(filter entity.PaymentFilter) ([]entity.Payment, error)
 	GetPaymentByID(id string) (*entity.Payment, error)
-	UpdatePaymentStatus(id string, status string) error
 }
 
 func (r *PaymentRepository) GetPayments(filter entity.PaymentFilter) ([]entity.Payment, error) {
@@ -61,21 +60,4 @@ func (r *PaymentRepository) GetPaymentByID(id string) (*entity.Payment, error) {
 		return nil, entity.WrapError(err, entity.ErrorCodeInternal, "db error")
 	}
 	return &p, nil
-}
-
-func (r *PaymentRepository) UpdatePaymentStatus(id string, status string) error {
-	result, err := r.db.Exec(
-		"UPDATE payments SET status = ? WHERE id = ?", status, id,
-	)
-	if err != nil {
-		return entity.WrapError(err, entity.ErrorCodeInternal, "failed to update payment")
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return entity.WrapError(err, entity.ErrorCodeInternal, "failed to check update result")
-	}
-	if rowsAffected == 0 {
-		return entity.ErrorNotFound("payment not found")
-	}
-	return nil
 }
