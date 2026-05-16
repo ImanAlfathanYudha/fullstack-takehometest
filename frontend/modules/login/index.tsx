@@ -1,4 +1,4 @@
-import { startTransition, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/router';
 import styles from './style.module.css';
 import { login } from '@/services/authService';

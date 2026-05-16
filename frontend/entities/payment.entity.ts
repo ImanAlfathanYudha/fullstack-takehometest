@@ -5,3 +5,10 @@ export interface Payment {
     amount: string;
     created_at: string;
 }
+
+export interface SummaryData {
+  total: number;
+  success: number;
+  failed: number;
+  processing: number;
+}
