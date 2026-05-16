@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getPayments } from '@/actions/payment.action';
 import { getRole, logout } from '@/services/authService';
-import styles from './dashboard.module.css';
+import styles from './style.module.css';
 import { Payment } from '@/entities/payment.entity';
 import { formatCurrency, formatDate } from '@/utils/format';
 
