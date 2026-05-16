@@ -1,0 +1,5 @@
+git add  frontend/
+
+git commit -m "main. push frontend repo"
+
+git push origin
